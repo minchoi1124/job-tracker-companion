@@ -68,7 +68,7 @@ export default function LoginPage() {
                     </button>
                 </form>
                 <div style={{ marginTop: "20px", textAlign: "center", fontSize: "0.9rem" }} className="text-muted">
-                    Don't have an account? <Link href="/register" style={{ color: "var(--info)", textDecoration: "none" }}>Register here</Link>
+                    Don&apos;t have an account? <Link href="/register" style={{ color: "var(--info)", textDecoration: "none" }}>Register here</Link>
                 </div>
             </div>
         </div>

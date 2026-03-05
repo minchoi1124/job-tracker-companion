@@ -29,7 +29,7 @@ export async function POST(request: Request) {
         }
 
         const body = await request.json();
-        const { title, company, url, description, status } = body;
+        const { title, company, url, description, status, location } = body;
 
         const newJob = await prisma.job.create({
             data: {
@@ -37,6 +37,7 @@ export async function POST(request: Request) {
                 company,
                 url,
                 description,
+                location: location || "Remote",
                 status: status || "Applied",
                 userId: (session.user as any).id,
             },

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Plus, Search, Loader2, Trash2, Edit, ExternalLink, FileText, X } from "lucide-react";
+import { Plus, Search, Loader2, Trash2, Edit, ExternalLink, FileText, X, TrendingUp, CheckCircle, Clock, XCircle } from "lucide-react";
 
 type Job = {
   id: string;
@@ -11,6 +11,7 @@ type Job = {
   company: string;
   url: string;
   description: string;
+  location: string;
   status: string;
   dateApplied: string;
 };
@@ -32,8 +33,8 @@ export default function Home() {
   const [editingJob, setEditingJob] = useState<Job | null>(null);
 
   // Manual Add State
-  const [manualForm, setManualForm] = useState({ title: "", company: "", url: "", description: "" });
-  const [editForm, setEditForm] = useState({ title: "", company: "", url: "", description: "" });
+  const [manualForm, setManualForm] = useState({ title: "", company: "", url: "", description: "", location: "Remote" });
+  const [editForm, setEditForm] = useState({ title: "", company: "", url: "", description: "", location: "" });
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -121,7 +122,7 @@ export default function Home() {
 
       if (res.ok) {
         setShowAddManual(false);
-        setManualForm({ title: "", company: "", url: "", description: "" });
+        setManualForm({ title: "", company: "", url: "", description: "", location: "Remote" });
         fetchJobs();
       }
     } catch (error) {
@@ -134,11 +135,13 @@ export default function Home() {
     if (!editingJob) return;
 
     try {
+      console.log("Updating job with:", editForm);
       const res = await fetch(`/api/jobs/${editingJob.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(editForm),
       });
+      console.log("Response status:", res.status);
 
       if (res.ok) {
         setEditingJob(null);
@@ -155,7 +158,8 @@ export default function Home() {
       title: job.title,
       company: job.company,
       url: job.url,
-      description: job.description
+      description: job.description,
+      location: job.location || ""
     });
   };
 
@@ -192,11 +196,19 @@ export default function Home() {
     }
   };
 
+  const stats = {
+    total: jobs.length,
+    interviewing: jobs.filter(j => j.status === "Interviewing").length,
+    offers: jobs.filter(j => j.status === "Offer").length,
+    rejected: jobs.filter(j => j.status === "Rejected").length,
+    rejectionRate: jobs.length > 0 ? Math.round((jobs.filter(j => j.status === "Rejected").length / jobs.length) * 100) : 0
+  };
+
   return (
     <>
       <div className="flex-between mb-4">
         <div>
-          <h1 className="text-gradient" style={{ fontSize: "2.5rem", marginBottom: "8px" }}>Job Search Companion</h1>
+          <h1 className="text-gradient" style={{ fontSize: "2.5rem", marginBottom: "8px" }}>Job Tracker Companion</h1>
           <p className="text-muted">Track your applications and never lose a job description again.</p>
         </div>
       </div>
@@ -225,7 +237,53 @@ export default function Home() {
         {scrapeError && <p className="mt-2 text-danger" style={{ color: "var(--danger)", fontSize: "0.9rem" }}>{scrapeError}</p>}
       </div>
 
-      {/* Jobs Table */}
+      {/* Stats Section */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+        gap: "16px",
+        marginBottom: "24px"
+      }}>
+        <div className="glass-panel" style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+          <div style={{ background: "rgba(138, 43, 226, 0.2)", padding: "12px", borderRadius: "12px", color: "var(--primary)" }}>
+            <TrendingUp size={24} />
+          </div>
+          <div>
+            <p className="text-muted" style={{ fontSize: "0.9rem", margin: 0 }}>Total Applications</p>
+            <h3 style={{ fontSize: "1.5rem", margin: 0 }}>{stats.total}</h3>
+          </div>
+        </div>
+
+        <div className="glass-panel" style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+          <div style={{ background: "rgba(26, 163, 255, 0.2)", padding: "12px", borderRadius: "12px", color: "var(--info)" }}>
+            <Clock size={24} />
+          </div>
+          <div>
+            <p className="text-muted" style={{ fontSize: "0.9rem", margin: 0 }}>Interviewing</p>
+            <h3 style={{ fontSize: "1.5rem", margin: 0 }}>{stats.interviewing}</h3>
+          </div>
+        </div>
+
+        <div className="glass-panel" style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+          <div style={{ background: "rgba(46, 213, 115, 0.2)", padding: "12px", borderRadius: "12px", color: "var(--success)" }}>
+            <CheckCircle size={24} />
+          </div>
+          <div>
+            <p className="text-muted" style={{ fontSize: "0.9rem", margin: 0 }}>Offers Received</p>
+            <h3 style={{ fontSize: "1.5rem", margin: 0 }}>{stats.offers}</h3>
+          </div>
+        </div>
+
+        <div className="glass-panel" style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+          <div style={{ background: "rgba(255, 71, 87, 0.2)", padding: "12px", borderRadius: "12px", color: "var(--danger)" }}>
+            <XCircle size={24} />
+          </div>
+          <div>
+            <p className="text-muted" style={{ fontSize: "0.9rem", margin: 0 }}>Rejection Rate</p>
+            <h3 style={{ fontSize: "1.5rem", margin: 0 }}>{stats.rejectionRate}%</h3>
+          </div>
+        </div>
+      </div>
       <div className="glass-panel" style={{ padding: "0" }}>
         <div className="job-table-container">
           <table className="job-table">
@@ -233,6 +291,7 @@ export default function Home() {
               <tr>
                 <th>Company</th>
                 <th>Role</th>
+                <th>Location</th>
                 <th>Status</th>
                 <th>Applied Date</th>
                 <th style={{ textAlign: "right" }}>Actions</th>
@@ -241,13 +300,13 @@ export default function Home() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={5} style={{ textAlign: "center", padding: "40px" }}>
+                  <td colSpan={6} style={{ textAlign: "center", padding: "40px" }}>
                     <Loader2 size={32} className="animate-spin" style={{ margin: "0 auto", color: "var(--primary)" }} />
                   </td>
                 </tr>
               ) : jobs.length === 0 ? (
                 <tr>
-                  <td colSpan={5} style={{ textAlign: "center", padding: "40px", color: "#808090" }}>
+                  <td colSpan={6} style={{ textAlign: "center", padding: "40px", color: "#808090" }}>
                     No jobs tracked yet. Paste a link above to get started!
                   </td>
                 </tr>
@@ -256,6 +315,7 @@ export default function Home() {
                   <tr key={job.id}>
                     <td style={{ fontWeight: 500 }}>{job.company || "Unknown Company"}</td>
                     <td>{job.title || "Unknown Role"}</td>
+                    <td style={{ color: "#a0a0b0" }}>{job.location || "Remote"}</td>
                     <td>
                       <select
                         className={`form-control status-badge ${statusClassPicker(job.status)}`}
@@ -302,13 +362,17 @@ export default function Home() {
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <div>
-                <h3 style={{ margin: 0 }}>{selectedJob.title}</h3>
-                <p className="text-muted" style={{ margin: "4px 0 0" }}>{selectedJob.company}</p>
+                <h3 style={{ margin: 0 }}>{selectedJob?.title}</h3>
+                <div style={{ display: "flex", gap: "10px", alignItems: "center", marginTop: "4px" }}>
+                  <p className="text-muted" style={{ margin: 0 }}>{selectedJob?.company}</p>
+                  <span style={{ color: "var(--glass-border)", fontSize: "0.8rem" }}>|</span>
+                  <p className="text-muted" style={{ margin: 0, color: "var(--info)" }}>{selectedJob?.location || "Remote"}</p>
+                </div>
               </div>
               <button className="close-btn" onClick={() => setSelectedJob(null)}><X size={24} /></button>
             </div>
             <div className="modal-body">
-              <div className="desc-text formatted-content">{selectedJob.description}</div>
+              <div className="desc-text formatted-content">{selectedJob?.description}</div>
             </div>
           </div>
         </div>
@@ -335,6 +399,10 @@ export default function Home() {
                 <div className="form-group">
                   <label>URL (Optional)</label>
                   <input type="url" className="form-control" value={manualForm.url} onChange={e => setManualForm({ ...manualForm, url: e.target.value })} />
+                </div>
+                <div className="form-group">
+                  <label>Location</label>
+                  <input type="text" className="form-control" placeholder="e.g. New York, SF, Remote" value={manualForm.location} onChange={e => setManualForm({ ...manualForm, location: e.target.value })} />
                 </div>
                 <div className="form-group">
                   <label>Full Job Description Text</label>
@@ -370,6 +438,10 @@ export default function Home() {
                 <div className="form-group">
                   <label>URL</label>
                   <input type="url" className="form-control" value={editForm.url} onChange={e => setEditForm({ ...editForm, url: e.target.value })} />
+                </div>
+                <div className="form-group">
+                  <label>Location</label>
+                  <input type="text" className="form-control" value={editForm.location} onChange={e => setEditForm({ ...editForm, location: e.target.value })} />
                 </div>
                 <div className="form-group">
                   <label>Full Job Description</label>

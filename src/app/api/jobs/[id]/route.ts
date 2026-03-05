@@ -19,10 +19,14 @@ async function getJobAndVerifyOwnership(id: string) {
 
 export async function GET(
     request: Request,
-    { params }: { params: Promise<{ id: string }> }
+    context: any
 ) {
     try {
-        const { id } = await params;
+        const params = await context.params;
+        const id = params?.id;
+
+        if (!id) return NextResponse.json({ error: "Job ID is required" }, { status: 400 });
+
         const result = await getJobAndVerifyOwnership(id);
 
         if (result.error) {
@@ -37,10 +41,16 @@ export async function GET(
 
 export async function PATCH(
     request: Request,
-    { params }: { params: Promise<{ id: string }> }
+    context: any // Support both Promise and non-Promise context for Next 14/15
 ) {
     try {
-        const { id } = await params;
+        const params = await context.params;
+        const id = params?.id;
+
+        if (!id) {
+            return NextResponse.json({ error: "Job ID is required" }, { status: 400 });
+        }
+
         const result = await getJobAndVerifyOwnership(id);
 
         if (result.error) {
@@ -48,24 +58,42 @@ export async function PATCH(
         }
 
         const body = await request.json();
+        console.log("PATCH request for ID:", id);
+        console.log("Body received:", body);
+
+        const { title, company, url, description, status, location } = body;
 
         const updatedJob = await prisma.job.update({
             where: { id },
-            data: body,
+            data: {
+                ...(title !== undefined && { title }),
+                ...(company !== undefined && { company }),
+                ...(url !== undefined && { url }),
+                ...(description !== undefined && { description }),
+                ...(status !== undefined && { status }),
+                ...(location !== undefined && { location }),
+            },
         });
 
+        console.log("Job updated successfully:", updatedJob.id);
         return NextResponse.json(updatedJob);
-    } catch (error) {
-        return NextResponse.json({ error: "Failed to update job" }, { status: 500 });
+    } catch (error: unknown) {
+        console.error("Failed to update job error details:", error);
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
 }
 
 export async function DELETE(
     request: Request,
-    { params }: { params: Promise<{ id: string }> }
+    context: any
 ) {
     try {
-        const { id } = await params;
+        const params = await context.params;
+        const id = params?.id;
+
+        if (!id) return NextResponse.json({ error: "Job ID is required" }, { status: 400 });
+
         const result = await getJobAndVerifyOwnership(id);
 
         if (result.error) {

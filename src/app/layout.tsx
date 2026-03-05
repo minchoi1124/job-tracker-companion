@@ -5,9 +5,10 @@ import Link from 'next/link'
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
 import { SignOutButton } from '@/components/SignOutButton'
+import { User as UserIcon, LayoutDashboard, Settings } from 'lucide-react'
 
 export const metadata: Metadata = {
-  title: 'Job Search Companion',
+  title: 'Job Tracker Companion',
   description: 'Manage and track your job applications effortlessly.',
 }
 
@@ -22,24 +23,60 @@ export default async function RootLayout({
     <html lang="en">
       <body>
         <Providers>
-          <nav className="glass-panel" style={{ margin: '20px auto', maxWidth: '1200px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 32px', borderRadius: '16px' }}>
-            <Link href="/" style={{ fontSize: '1.4rem', fontWeight: 'bold', textDecoration: 'none', letterSpacing: '-0.02em' }} className="text-gradient">
-              JobCompanion
-            </Link>
-            <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
-              {session ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', background: 'rgba(255,255,255,0.05)', padding: '6px 16px', borderRadius: '40px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                    <span style={{ fontSize: '0.9rem', fontWeight: '600', color: 'var(--foreground)' }}>{session.user?.name || 'User'}</span>
-                    <span className="text-muted" style={{ fontSize: '0.7rem' }}>{session.user?.email}</span>
+          {session && (
+            <nav style={{
+              margin: '24px auto',
+              maxWidth: '1200px',
+              display: 'flex',
+              justifyContent: 'flex-end',
+              alignItems: 'center',
+              padding: '0 2rem'
+            }}>
+              <div className="glass-panel" style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '24px',
+                padding: '8px 8px 8px 16px',
+                borderRadius: '100px',
+                border: '1px solid var(--glass-border)',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
+                    <span style={{
+                      fontSize: '0.85rem',
+                      fontWeight: '600',
+                      color: 'var(--foreground)',
+                      lineHeight: '1.2'
+                    }}>
+                      {session.user?.name || 'User'}
+                    </span>
+                    <span className="text-muted" style={{
+                      fontSize: '0.7rem',
+                      opacity: 0.7
+                    }}>
+                      {session.user?.email}
+                    </span>
                   </div>
-                  <SignOutButton />
+                  <div style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, var(--primary), var(--info))',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white',
+                    boxShadow: '0 0 15px rgba(138, 43, 226, 0.3)'
+                  }}>
+                    <UserIcon size={20} />
+                  </div>
                 </div>
-              ) : (
-                <Link href="/login" className="btn btn-secondary" style={{ padding: '8px 20px', fontSize: '0.9rem', textDecoration: 'none', borderRadius: '40px' }}>Login</Link>
-              )}
-            </div>
-          </nav>
+                <div style={{ width: '1px', height: '24px', background: 'var(--glass-border)' }} />
+                <SignOutButton />
+              </div>
+            </nav>
+          )}
           <main>{children}</main>
         </Providers>
       </body>
