@@ -308,7 +308,7 @@ export default function Home() {
               <button className="close-btn" onClick={() => setSelectedJob(null)}><X size={24} /></button>
             </div>
             <div className="modal-body">
-              <div className="desc-text formatted-content" dangerouslySetInnerHTML={{ __html: selectedJob.description }} />
+              <div className="desc-text formatted-content">{selectedJob.description}</div>
             </div>
           </div>
         </div>
