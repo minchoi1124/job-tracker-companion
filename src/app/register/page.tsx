@@ -47,6 +47,7 @@ export default function RegisterPage() {
                         <input
                             type="text"
                             className="form-control"
+                            required
                             value={form.name}
                             onChange={(e) => setForm({ ...form, name: e.target.value })}
                         />
