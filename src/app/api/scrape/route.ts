@@ -44,6 +44,22 @@ function parseGreenhouseJobUrl(input: string): { companyShortName: string; jobId
     return { companyShortName, jobId, canonicalUrl: u.toString() };
 }
 
+function parseAshbyJobUrl(input: string): { company: string } | null {
+    const u = toUrlOrNull(input);
+    if (!u) return null;
+
+    const host = u.hostname.toLowerCase();
+    if (host !== "ashbyhq.com" && host !== "jobs.ashbyhq.com") return null;
+
+    const segments = u.pathname.split("/").filter(Boolean);
+    if (!segments.length) return null;
+
+    const company = segments[0];
+    if (!company) return null;
+
+    return { company };
+}
+
 /**
  * Converts job description HTML into clean, readable plain text.
  * Preserves structural spacing and bullet points without raw HTML tags.
@@ -165,34 +181,54 @@ export async function POST(request: Request) {
         }
 
         // --- Ashby API Integration ---
-        // Match ashbyhq.com/{company}/jobs/{id} or similar
-        const ashbyMatch = url.match(/ashbyhq\.com\/([^/]+)\/(\d+)/) || url.match(/jobs\.ashbyhq\.com\/([^/]+)\/(\w+-?\w+)/);
-        if (ashbyMatch) {
-            const company = ashbyMatch[1];
-            const jobId = ashbyMatch[2];
-            // Ashby API is usually a board list, we fetch the board and find our job
+        // Supports:
+        // - ashbyhq.com/{company}/...
+        // - jobs.ashbyhq.com/{company}/...
+        const ashby = parseAshbyJobUrl(url);
+        if (ashby) {
+            const { company } = ashby;
             const apiUrl = `https://api.ashbyhq.com/posting-api/job-board/${company}`;
 
             try {
                 const apiRes = await fetch(apiUrl);
                 if (apiRes.ok) {
                     type AshbyJob = {
-                        id?: string;
-                        externalId?: string;
                         title?: string;
                         descriptionHtml?: string;
+                        descriptionPlain?: string;
                         description?: string;
                         location?: string;
+                        jobUrl?: string;
+                        applyUrl?: string;
                     };
                     type AshbyBoard = { jobs?: AshbyJob[] };
 
                     const data: AshbyBoard = await apiRes.json();
-                    const job = data.jobs?.find((j) => j.id === jobId || j.externalId === jobId);
-                    if (job) {
+                    const jobs = data.jobs ?? [];
+
+                    const requestedUrl = toUrlOrNull(url);
+                    let job: AshbyJob | undefined;
+
+                    if (requestedUrl) {
+                        job = jobs.find((j) => {
+                            const candidateUrl = toUrlOrNull(j.jobUrl || j.applyUrl || "");
+                            return candidateUrl?.pathname === requestedUrl.pathname;
+                        });
+                    }
+
+                    if (!job) {
+                        console.warn("Ashby API: Job not found for URL, falling back to generic scraper");
+                    } else {
+                        const rawDescription =
+                            job.descriptionHtml ||
+                            job.description ||
+                            job.descriptionPlain ||
+                            "";
+
                         return NextResponse.json({
                             title: job.title || "",
                             company: company.charAt(0).toUpperCase() + company.slice(1),
-                            description: formatDescription(job.descriptionHtml || job.description || ""),
+                            description: formatDescription(rawDescription),
                             location: job.location || "",
                             url: url,
                         });
