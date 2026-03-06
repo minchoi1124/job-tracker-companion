@@ -77,7 +77,7 @@ export async function POST(request: Request) {
                         title: data.title || "",
                         company: companyShortName.charAt(0).toUpperCase() + companyShortName.slice(1),
                         description: formatDescription(rawContent),
-                        location: data.location?.name || "Remote",
+                        location: data.location?.name || "",
                         url: url,
                     });
                 }
@@ -101,7 +101,7 @@ export async function POST(request: Request) {
                         title: data.text,
                         company: company.charAt(0).toUpperCase() + company.slice(1),
                         description: formatDescription(rawDescription),
-                        location: data.categories?.location || "Remote",
+                        location: data.categories?.location || "",
                         url: url,
                     });
                 }
@@ -127,7 +127,7 @@ export async function POST(request: Request) {
                             title: job.title,
                             company: company.charAt(0).toUpperCase() + company.slice(1),
                             description: formatDescription(job.descriptionHtml || job.description || ""),
-                            location: job.location || "Remote",
+                            location: job.location || "",
                             url: url,
                         });
                     }
@@ -186,9 +186,7 @@ export async function POST(request: Request) {
         }
 
         // Try to find location from meta tags
-        const location = $('meta[property="og:job_location"]').attr('content') ||
-            $('meta[name="location"]').attr('content') ||
-            "Remote";
+        "";
 
         // Use Mozilla Readability to get the main content text
         const { parseHTML } = await import("linkedom");

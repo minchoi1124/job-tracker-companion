@@ -34,7 +34,7 @@ export default function Home() {
   const [editingJob, setEditingJob] = useState<Job | null>(null);
 
   // Manual Add State
-  const [manualForm, setManualForm] = useState({ title: "", company: "", url: "", description: "", location: "Remote" });
+  const [manualForm, setManualForm] = useState({ title: "", company: "", url: "", description: "", location: "" });
   const [editForm, setEditForm] = useState({ title: "", company: "", url: "", description: "", location: "" });
 
   useEffect(() => {
@@ -92,7 +92,7 @@ export default function Home() {
         company: data.company || "",
         url: urlInput,
         description: data.description || "",
-        location: data.location || "Remote",
+        location: data.location || "",
       });
       setUrlInput("");
       setShowAddManual(true);
@@ -103,7 +103,7 @@ export default function Home() {
       }
     } catch (error: any) {
       // Even on total failure, open the modal with just the URL
-      setManualForm({ title: "", company: "", url: urlInput, description: "", location: "Remote" });
+      setManualForm({ title: "", company: "", url: urlInput, description: "", location: "" });
       setUrlInput("");
       setShowAddManual(true);
       setScrapeError("Scraping failed — please fill in the details manually.");
@@ -123,7 +123,7 @@ export default function Home() {
 
       if (res.ok) {
         setShowAddManual(false);
-        setManualForm({ title: "", company: "", url: "", description: "", location: "Remote" });
+        setManualForm({ title: "", company: "", url: "", description: "", location: "" });
         fetchJobs();
       }
     } catch (error) {
@@ -237,7 +237,7 @@ export default function Home() {
           <button type="submit" className="btn" disabled={isScraping || !urlInput}>
             {isScraping ? <><Loader2 size={18} className="animate-spin" /> Scraping...</> : <><Search size={18} /> Auto-fill</>}
           </button>
-          <button type="button" className="btn btn-secondary" onClick={() => { setManualForm({ title: "", company: "", url: "", description: "", location: "Remote" }); setShowAddManual(true); }}>
+          <button type="button" className="btn btn-secondary" onClick={() => { setManualForm({ title: "", company: "", url: "", description: "", location: "" }); setShowAddManual(true); }}>
             <Plus size={18} /> Manual Entry
           </button>
         </form>
