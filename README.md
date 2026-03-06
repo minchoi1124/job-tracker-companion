@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Job Search Helper
 
-## Getting Started
+A job application tracker built to solve two real problems that most trackers don't address: **job postings getting taken down before you can reference them again**, and **the tedious manual work of logging every application**.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## The Problem
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+If you've ever applied to a lot of jobs, you know the frustrations:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Postings disappear.** You apply to a role, the listing gets removed a week later, and now you have no idea what the position was actually about — especially painful when you're prepping for an interview or following up.
+- **Tracking is tedious.** Copying and pasting job titles, companies, locations, and descriptions into a spreadsheet or tracker for every single application is slow and repetitive.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Most job trackers only let you save a URL and a status. That's not enough.
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## The Solution
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Job Search Helper is built around two core ideas:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 1. Save the Job Description, Not Just the Link
+When you add a job posting, the app automatically scrapes and stores the full job description at that moment. Even if the company removes the listing later, you'll always have a copy of exactly what the role entailed — the responsibilities, requirements, and details you need to prep for interviews or decide if you want to follow up.
 
-## Deploy on Vercel
+### 2. Minimize Manual Entry
+Instead of filling out a form field by field, just paste the job posting URL. The app fetches and parses the page to automatically pull in the job title, company name, location, and description — so you can log an application in seconds, not minutes.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Features
+
+- 🔗 **URL-based job entry** — paste a link and let the app do the heavy lifting
+- 📄 **Job description archiving** — the full description is saved so it's never lost when a posting is removed
+- 📊 **Application status tracking** — keep tabs on where you are in the process for each role
+- 🔍 **Search** — quickly filter through your applications
+- 🔐 **User authentication** — your job list is private to your account
+
+---
+
+## Tech Stack
+
+- **Framework:** [Next.js](https://nextjs.org) (App Router)
+- **Database:** [Supabase](https://supabase.com) (PostgreSQL)
+- **Auth:** [NextAuth.js](https://next-auth.js.org)
+- **Hosting:** [Vercel](https://vercel.com)
