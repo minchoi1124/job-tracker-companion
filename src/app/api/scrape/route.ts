@@ -259,6 +259,16 @@ export async function POST(request: Request) {
             }
         }
 
+        // Some libraries (or their dependencies) may assume a browser-like global `location`.
+        // In Node/Next.js this does not exist by default, so we provide a minimal polyfill.
+        if (typeof (globalThis as { location?: unknown }).location === "undefined") {
+            try {
+                (globalThis as { location?: unknown }).location = new URL(url);
+            } catch {
+                (globalThis as { location?: unknown }).location = { href: url };
+            }
+        }
+
         // Use Mozilla Readability to get the main content text
         const { parseHTML } = await import("linkedom");
         const { Readability } = await import("@mozilla/readability");
