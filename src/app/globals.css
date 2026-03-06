@@ -157,6 +157,14 @@ h6 {
   white-space: nowrap;
 }
 
+textarea.form-control {
+  /* Allow long descriptions to scroll and wrap naturally */
+  overflow: auto;
+  text-overflow: initial;
+  white-space: pre-wrap;
+  resize: vertical;
+}
+
 .form-control:focus {
   outline: none;
   border-color: var(--primary);
