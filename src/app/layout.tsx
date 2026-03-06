@@ -25,12 +25,14 @@ export default async function RootLayout({
         <Providers>
           {session && (
             <nav style={{
-              margin: '24px auto',
+              margin: '24px auto 0',
               maxWidth: '1200px',
+              width: '100%',
               display: 'flex',
               justifyContent: 'flex-end',
               alignItems: 'center',
-              padding: '0 2rem'
+              padding: '0 2rem',
+              boxSizing: 'border-box'
             }}>
               <div className="glass-panel" style={{
                 display: 'flex',

@@ -1,5 +1,17 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
 :root {
   --background: #0a0a0f;
   --foreground: #f0f0f5;
@@ -129,6 +141,9 @@ h6 {
 }
 
 .form-control {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
   background: rgba(0, 0, 0, 0.2);
   border: 1px solid var(--glass-border);
   border-radius: 8px;
@@ -137,6 +152,9 @@ h6 {
   font-family: inherit;
   font-size: 1rem;
   transition: all 0.2s ease;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .form-control:focus {
@@ -152,8 +170,6 @@ h6 {
 /* Table */
 .job-table-container {
   overflow-x: auto;
-  border-radius: 12px;
-  border: 1px solid var(--glass-border);
 }
 
 .job-table {
@@ -171,6 +187,15 @@ h6 {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   border-bottom: 1px solid var(--glass-border);
+  border-radius: 0 !important;
+}
+
+.job-table th:first-child {
+  border-top-left-radius: 0 !important;
+}
+
+.job-table th:last-child {
+  border-top-right-radius: 0 !important;
 }
 
 .job-table td {

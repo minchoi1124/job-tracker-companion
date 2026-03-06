@@ -21,6 +21,7 @@ export default function Home() {
   const router = useRouter();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Scraper State
   const [urlInput, setUrlInput] = useState("");
@@ -204,6 +205,12 @@ export default function Home() {
     rejectionRate: jobs.length > 0 ? Math.round((jobs.filter(j => j.status === "Rejected").length / jobs.length) * 100) : 0
   };
 
+  const filteredJobs = jobs.filter(job =>
+    job.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (job.location && job.location.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
   return (
     <>
       <div className="flex-between mb-4">
@@ -284,8 +291,32 @@ export default function Home() {
           </div>
         </div>
       </div>
-      <div className="glass-panel" style={{ padding: "0" }}>
-        <div className="job-table-container">
+
+      <div className="glass-panel" style={{ padding: "0", overflow: "hidden", marginTop: "24px", borderRadius: "0" }}>
+        <div style={{
+          padding: "20px 24px",
+          borderBottom: "1px solid var(--glass-border)",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: "16px",
+          flexWrap: "wrap",
+          boxSizing: "border-box"
+        }}>
+          <h2 className="text-gradient" style={{ fontSize: "1.8rem", margin: 0, fontWeight: "600" }}>Applications</h2>
+          <div style={{ position: "relative", flex: "0 1 300px", minWidth: 0 }}>
+            <Search size={18} style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", color: "#a0a0b0" }} />
+            <input
+              type="text"
+              placeholder="Search by company, role..."
+              className="form-control"
+              style={{ width: "100%", paddingLeft: "42px", height: "40px", fontSize: "0.95rem" }}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+        </div>
+        <div className="job-table-container" style={{ borderRadius: "0 !important", border: "none" }}>
           <table className="job-table">
             <thead>
               <tr>
@@ -304,14 +335,14 @@ export default function Home() {
                     <Loader2 size={32} className="animate-spin" style={{ margin: "0 auto", color: "var(--primary)" }} />
                   </td>
                 </tr>
-              ) : jobs.length === 0 ? (
+              ) : filteredJobs.length === 0 ? (
                 <tr>
-                  <td colSpan={6} style={{ textAlign: "center", padding: "40px", color: "#808090" }}>
-                    No jobs tracked yet. Paste a link above to get started!
+                  <td colSpan={6} style={{ textAlign: "center", padding: "40px", color: "var(--muted)" }}>
+                    {searchQuery ? "No jobs match your search." : "No job applications found. Start by adding one!"}
                   </td>
                 </tr>
               ) : (
-                jobs.map(job => (
+                filteredJobs.map((job) => (
                   <tr key={job.id}>
                     <td style={{ fontWeight: 500 }}>{job.company || "Unknown Company"}</td>
                     <td>{job.title || "Unknown Role"}</td>
