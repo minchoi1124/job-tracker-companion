@@ -2,8 +2,6 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import * as cheerio from "cheerio";
-import { Readability } from "@mozilla/readability";
-import { JSDOM } from "jsdom";
 
 /**
  * Converts job description HTML into clean, readable plain text.
@@ -193,6 +191,8 @@ export async function POST(request: Request) {
             "Remote";
 
         // Use Mozilla Readability to get the main content text
+        const { JSDOM } = await import("jsdom");
+        const { Readability } = await import("@mozilla/readability");
         const doc = new JSDOM(html, { url });
         const reader = new Readability(doc.window.document);
         const article = reader.parse();
