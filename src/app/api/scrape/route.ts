@@ -191,10 +191,10 @@ export async function POST(request: Request) {
             "Remote";
 
         // Use Mozilla Readability to get the main content text
-        const { JSDOM } = await import("jsdom");
+        const { parseHTML } = await import("linkedom");
         const { Readability } = await import("@mozilla/readability");
-        const doc = new JSDOM(html, { url });
-        const reader = new Readability(doc.window.document);
+        const { document } = parseHTML(html);
+        const reader = new Readability(document as any);
         const article = reader.parse();
 
         // Get HTML content for better formatting, fallback to textContent
