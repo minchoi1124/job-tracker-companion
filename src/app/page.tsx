@@ -85,28 +85,28 @@ export default function Home() {
 
       const data = await res.json();
 
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to parse job");
-      }
-
-      if (!data.description || data.description.length < 50) {
-        throw new Error("Could not find job description text. Most likely the site blocked us. Try manual entry.");
-      }
-
-      const saveRes = await fetch("/api/jobs", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+      // Whether scraping succeeded fully, partially, or failed — pre-fill the modal
+      // so the user can review and fill in whatever is missing.
+      setManualForm({
+        title: data.title || "",
+        company: data.company || "",
+        url: urlInput,
+        description: data.description || "",
+        location: data.location || "Remote",
       });
+      setUrlInput("");
+      setShowAddManual(true);
 
-      if (saveRes.ok) {
-        setUrlInput("");
-        fetchJobs();
-      } else {
-        throw new Error("Failed to save to database");
+      // If the API returned an error or very little data, show a soft warning
+      if (!res.ok || !data.description || data.description.length < 50) {
+        setScrapeError("Couldn't auto-fill all fields — the site may have blocked us. Please fill in the missing details below.");
       }
     } catch (error: any) {
-      setScrapeError(error.message);
+      // Even on total failure, open the modal with just the URL
+      setManualForm({ title: "", company: "", url: urlInput, description: "", location: "Remote" });
+      setUrlInput("");
+      setShowAddManual(true);
+      setScrapeError("Scraping failed — please fill in the details manually.");
     } finally {
       setIsScraping(false);
     }
@@ -235,13 +235,13 @@ export default function Home() {
             required
           />
           <button type="submit" className="btn" disabled={isScraping || !urlInput}>
-            {isScraping ? <><Loader2 size={18} className="animate-spin" /> Scraping...</> : <><Search size={18} /> Auto-fill & Save</>}
+            {isScraping ? <><Loader2 size={18} className="animate-spin" /> Scraping...</> : <><Search size={18} /> Auto-fill</>}
           </button>
-          <button type="button" className="btn btn-secondary" onClick={() => setShowAddManual(true)}>
+          <button type="button" className="btn btn-secondary" onClick={() => { setManualForm({ title: "", company: "", url: "", description: "", location: "Remote" }); setShowAddManual(true); }}>
             <Plus size={18} /> Manual Entry
           </button>
         </form>
-        {scrapeError && <p className="mt-2 text-danger" style={{ color: "var(--danger)", fontSize: "0.9rem" }}>{scrapeError}</p>}
+        {scrapeError && <p className="mt-2" style={{ color: "var(--warning)", fontSize: "0.9rem" }}>{scrapeError}</p>}
       </div>
 
       {/* Stats Section */}
@@ -411,12 +411,17 @@ export default function Home() {
 
       {/* Manual Add Modal */}
       {showAddManual && (
-        <div className="modal-overlay" onClick={() => setShowAddManual(false)}>
+        <div className="modal-overlay" onClick={() => { setShowAddManual(false); setScrapeError(""); }}>
           <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: "600px" }}>
             <div className="modal-header">
-              <h3 style={{ margin: 0 }}>Manually Add Job</h3>
-              <button className="close-btn" onClick={() => setShowAddManual(false)}><X size={24} /></button>
+              <h3 style={{ margin: 0 }}>Add Job</h3>
+              <button className="close-btn" onClick={() => { setShowAddManual(false); setScrapeError(""); }}><X size={24} /></button>
             </div>
+            {scrapeError && (
+              <div style={{ padding: "12px 24px", background: "rgba(255, 165, 2, 0.1)", borderBottom: "1px solid rgba(255, 165, 2, 0.3)", color: "var(--warning)", fontSize: "0.875rem" }}>
+                ⚠️ {scrapeError}
+              </div>
+            )}
             <div className="modal-body">
               <form onSubmit={handleManualAdd}>
                 <div className="form-group">
@@ -440,7 +445,7 @@ export default function Home() {
                   <textarea className="form-control" rows={8} required value={manualForm.description} onChange={e => setManualForm({ ...manualForm, description: e.target.value })}></textarea>
                 </div>
                 <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px", marginTop: "24px" }}>
-                  <button type="button" className="btn btn-secondary" onClick={() => setShowAddManual(false)}>Cancel</button>
+                  <button type="button" className="btn btn-secondary" onClick={() => { setShowAddManual(false); setScrapeError(""); }}>Cancel</button>
                   <button type="submit" className="btn">Save Job</button>
                 </div>
               </form>
