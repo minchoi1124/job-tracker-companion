@@ -3,6 +3,47 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import * as cheerio from "cheerio";
 
+function toUrlOrNull(input: string): URL | null {
+    if (!input) return null;
+    try {
+        return new URL(input);
+    } catch {
+        try {
+            return new URL(`https://${input}`);
+        } catch {
+            return null;
+        }
+    }
+}
+
+function parseGreenhouseJobUrl(input: string): { companyShortName: string; jobId: string; canonicalUrl: string } | null {
+    const u = toUrlOrNull(input);
+    if (!u) return null;
+
+    const host = u.hostname.toLowerCase();
+    const isGreenhouseBoardHost =
+        host === "boards.greenhouse.io" ||
+        host === "job-boards.greenhouse.io" ||
+        /^boards\.[a-z0-9-]+\.greenhouse\.io$/.test(host);
+
+    if (!isGreenhouseBoardHost) return null;
+
+    const segments = u.pathname.split("/").filter(Boolean);
+    if (!segments.length) return null;
+
+    const companyShortName = segments[0];
+    const jobsIdx = segments.indexOf("jobs");
+
+    let rawJobId: string | null = null;
+    if (jobsIdx >= 0 && segments[jobsIdx + 1]) rawJobId = segments[jobsIdx + 1];
+    if (!rawJobId) rawJobId = u.searchParams.get("gh_jid");
+
+    const jobId = rawJobId?.match(/[a-zA-Z0-9]+/)?.[0];
+    if (!companyShortName || !jobId) return null;
+
+    return { companyShortName, jobId, canonicalUrl: u.toString() };
+}
+
 /**
  * Converts job description HTML into clean, readable plain text.
  * Preserves structural spacing and bullet points without raw HTML tags.
@@ -58,11 +99,14 @@ export async function POST(request: Request) {
         }
 
         // --- Greenhouse API Integration ---
-        // Match boards.greenhouse.io/{company}/jobs/{id}
-        const greenhouseMatch = url.match(/boards\.greenhouse\.io\/([^/]+)\/jobs\/([a-zA-Z0-9]+)/);
-        if (greenhouseMatch) {
-            const companyShortName = greenhouseMatch[1];
-            const jobId = greenhouseMatch[2];
+        // Supports:
+        // - boards.greenhouse.io/{company}/jobs/{id}
+        // - job-boards.greenhouse.io/{company}/jobs/{id}
+        // - boards.{region}.greenhouse.io/{company}/jobs/{id}
+        // - .../{company}/jobs/{id}?gh_src=... or .../{company}?gh_jid={id}
+        const greenhouse = parseGreenhouseJobUrl(url);
+        if (greenhouse) {
+            const { companyShortName, jobId } = greenhouse;
             const apiUrl = `https://boards-api.greenhouse.io/v1/boards/${companyShortName}/jobs/${jobId}`;
 
             try {
@@ -95,10 +139,22 @@ export async function POST(request: Request) {
             try {
                 const apiRes = await fetch(apiUrl);
                 if (apiRes.ok) {
-                    const data = await apiRes.json();
-                    const rawDescription = data.descriptionHtml + (data.lists?.map((l: any) => `<h3>${l.text}</h3><ul>${l.content}</ul>`).join('') || '');
+                    type LeverList = { text?: string; content?: string };
+                    type LeverPosting = {
+                        text?: string;
+                        descriptionHtml?: string;
+                        lists?: LeverList[];
+                        categories?: { location?: string };
+                    };
+
+                    const data: LeverPosting = await apiRes.json();
+                    const rawDescription =
+                        (data.descriptionHtml ?? "") +
+                        ((data.lists ?? [])
+                            .map((l) => `<h3>${l.text ?? ""}</h3><ul>${l.content ?? ""}</ul>`)
+                            .join("") || "");
                     return NextResponse.json({
-                        title: data.text,
+                        title: data.text || "",
                         company: company.charAt(0).toUpperCase() + company.slice(1),
                         description: formatDescription(rawDescription),
                         location: data.categories?.location || "",
@@ -120,11 +176,21 @@ export async function POST(request: Request) {
             try {
                 const apiRes = await fetch(apiUrl);
                 if (apiRes.ok) {
-                    const data = await apiRes.json();
-                    const job = data.jobs?.find((j: any) => j.id === jobId || j.externalId === jobId);
+                    type AshbyJob = {
+                        id?: string;
+                        externalId?: string;
+                        title?: string;
+                        descriptionHtml?: string;
+                        description?: string;
+                        location?: string;
+                    };
+                    type AshbyBoard = { jobs?: AshbyJob[] };
+
+                    const data: AshbyBoard = await apiRes.json();
+                    const job = data.jobs?.find((j) => j.id === jobId || j.externalId === jobId);
                     if (job) {
                         return NextResponse.json({
-                            title: job.title,
+                            title: job.title || "",
                             company: company.charAt(0).toUpperCase() + company.slice(1),
                             description: formatDescription(job.descriptionHtml || job.description || ""),
                             location: job.location || "",
@@ -158,6 +224,14 @@ export async function POST(request: Request) {
         let title = $('meta[property="og:title"]').attr('content') || $('title').text() || "";
         let company = $('meta[property="og:site_name"]').attr('content') || "";
 
+        // Try to find location from meta tags (best-effort; lots of sites omit this)
+        let location =
+            $('meta[property="job:location"]').attr("content") ||
+            $('meta[name="job:location"]').attr("content") ||
+            $('meta[name="jobLocation"]').attr("content") ||
+            $('meta[property="og:locality"]').attr("content") ||
+            "";
+
         // Clean up title
         if (title.includes(" at ")) {
             const parts = title.split(" at ");
@@ -185,14 +259,11 @@ export async function POST(request: Request) {
             }
         }
 
-        // Try to find location from meta tags
-        "";
-
         // Use Mozilla Readability to get the main content text
         const { parseHTML } = await import("linkedom");
         const { Readability } = await import("@mozilla/readability");
         const { document } = parseHTML(html);
-        const reader = new Readability(document as any);
+        const reader = new Readability(document as unknown as Document);
         const article = reader.parse();
 
         // Get HTML content for better formatting, fallback to textContent
@@ -208,10 +279,11 @@ export async function POST(request: Request) {
             location,
             url,
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Scraping error:", error);
+        const message = error instanceof Error ? error.message : "Failed to scrape";
         return NextResponse.json(
-            { error: error.message || "Failed to scrape" },
+            { error: message },
             { status: 500 }
         );
     }
